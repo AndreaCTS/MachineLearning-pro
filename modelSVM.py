@@ -25,9 +25,9 @@ X_train, X_test, y_train, y_test = load_mnist_data()
 
 
 # Estandarizar las características
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+#scaler = StandardScaler()
+#X_train = scaler.fit_transform(X_train)
+#X_test = scaler.transform(X_test)
 
 
 param_grid_poly = {
@@ -47,4 +47,4 @@ print(f'Accuracy with  Standard in POLY: {accuracy_score(y_test, y_predPoly)}')
 
 # Guardar el modelo entrenado y el scaler
 joblib.dump(grid_poly, "svm_digit_classifier.pkl")
-joblib.dump(scaler, "scaler_28x28.pkl")
+#joblib.dump(scaler, "scaler_28x28.pkl")
