@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 
 # Load the classifier
 clf = joblib.load("svm_digit_classifier.pkl")
-scaler = joblib.load("scaler_28x28.pkl")
 
 # MediaPipe Hands initialization
 mp_hands = mp.solutions.hands
@@ -34,7 +33,7 @@ def preprocess_trajectory(trajectory, frame_shape):
     
     # Dibujar la trayectoria en la imagen
     for (x, y) in trajectory:
-        cv2.circle(image, (x, y), 5, 255, -1)
+        cv2.circle(image, (x, y), 7, 255, -1)
 
     # Encontrar los límites del trazo
     x_coords, y_coords = zip(*trajectory)
@@ -104,7 +103,9 @@ while True:
             input_img = preprocess_trajectory(trajectory, frame.shape)
             if input_img is not None:
                 input_img_for_model = input_img.reshape(1, -1)   # aplanar para el modelo SVM
-                input_img_for_model = scaler.transform(input_img_for_model)  # Estandarizar
+                print("tamaño de la imagen : ",input_img_for_model.shape)
+                print("vector image: ",input_img_for_model)
+                #input_img_for_model = scaler.transform(input_img_for_model)  # Estandarizar
                 digit = clf.predict(input_img_for_model)
                 print(f'Predicted Digit: {digit[0]}')
                 
