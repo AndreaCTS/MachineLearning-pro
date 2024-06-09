@@ -78,11 +78,11 @@ def preprocess_trajectory(trajectory, frame_shape):
     kernel = np.ones((2,2), np.uint8)
     final_image = cv2.morphologyEx(final_image, cv2.MORPH_CLOSE, kernel)
     final_image = cv2.GaussianBlur(final_image, (3, 3), 0)
+    final_image = cv2.normalize(final_image, 0, 255, cv2.NORM_MINMAX)
+    # Perform histogram equalization
+    final_image = cv2.equalizeHist(final_image)
 
-    # Normalizar la imagen
-    normalized_image = final_image / 255.0
-
-    return normalized_image
+    return final_image
 
 while True:
     ret, frame = cap.read()
