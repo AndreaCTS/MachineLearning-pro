@@ -34,7 +34,7 @@ def interpolate_trajectory(trajectory):
         curr = trajectory[i]
         interpolated.append(prev)
         # Interpolar puntos adicionales
-        for t in np.linspace(0, 1, num=5):  # Reducir la interpolación para mejorar precisión
+        for t in np.linspace(0, 1, num=10):
             interpolated.append((int(prev[0] * (1 - t) + curr[0] * t), int(prev[1] * (1 - t) + curr[1] * t)))
     interpolated.append(trajectory[-1])
     return interpolated
@@ -76,8 +76,10 @@ def preprocess_trajectory(trajectory, frame_shape):
 
     # Aplicar operaciones morfológicas para rellenar huecos y suavizar
     kernel = np.ones((2, 2), np.uint8)
-    final_image = cv2.morphologyEx(final_image, cv2.MORPH_CLOSE, kernel)
-    
+    final_image = cv2.dilate(final_image, kernel, iterations=2)
+    final_image = cv2.erode(final_image, kernel, iterations=1)
+    final_image = cv2.GaussianBlur(final_image, (3, 3), 0)
+
     # Normalización y ecualización del histograma
     final_image = cv2.normalize(final_image, None, 0, 255, cv2.NORM_MINMAX)
     final_image = cv2.equalizeHist(final_image)
