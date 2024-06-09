@@ -7,6 +7,12 @@ import matplotlib.pyplot as plt
 
 class TraceRecognition():
 
+    def __init__(self):
+        self.clf = joblib.load("svm_digit_classifier.pkl")
+        self.mp_hands = mp.solutions.hands
+        self.hands = self.mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7)
+        self.trajectory = []
+
 
     def smooth_trajectory(self,trajectory, alpha=0.75):
         smoothed = []
@@ -78,17 +84,7 @@ class TraceRecognition():
         return final_image
 
     def run(self):
-
-        # Load the classifier
-        clf = joblib.load("svm_digit_classifier.pkl")
-
-        # MediaPipe Hands initialization
-        mp_hands = mp.solutions.hands
-        hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7)
-
-        # Iniciar la captura de video
         cap = cv2.VideoCapture(0)
-        trajectory = []
 
         while True:
             ret, frame = cap.read()
@@ -101,21 +97,21 @@ class TraceRecognition():
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             
             # Procesar la imagen para encontrar las manos
-            result = hands.process(rgb_frame)
+            result = self.hands.process(rgb_frame)
             
             if result.multi_hand_landmarks:
                 for hand_landmarks in result.multi_hand_landmarks:
                     # Obtener las coordenadas del índice del dedo
-                    index_finger_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+                    index_finger_tip = hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP]
                     h, w, _ = frame.shape
                     cx, cy = int(index_finger_tip.x * w), int(index_finger_tip.y * h)
                     
                     # Dibujar el centro en el frame
                     cv2.circle(frame, (cx, cy), 8, (0, 255, 0), -1)
-                    trajectory.append((cx, cy))
+                    self.trajectory.append((cx, cy))
                     
                     # Dibujar el rastro del dedo en el frame
-                    smoothed_trajectory = self.smooth_trajectory(trajectory)
+                    smoothed_trajectory = self.smooth_trajectory(self.trajectory)
                     for i in range(1, len(smoothed_trajectory)):
                         if smoothed_trajectory[i - 1] is None or smoothed_trajectory[i] is None:
                             continue
@@ -128,19 +124,19 @@ class TraceRecognition():
             
             # Si el usuario presiona 'p', procesar la trayectoria y predecir el dígito
             if key == ord('p'):
-                if trajectory:
-                    input_img = self.preprocess_trajectory(trajectory, frame.shape)
+                if self.trajectory:
+                    input_img = self.preprocess_trajectory(self.trajectory, frame.shape)
                     if input_img is not None:
                         input_img_for_model = input_img.reshape(1, -1)   # aplanar para el modelo SVM
                         print("tamaño de la imagen : ",input_img_for_model.shape)
                         print("vector image: ",input_img_for_model)
                         #input_img_for_model = scaler.transform(input_img_for_model)  # Estandarizar
-                        digit = clf.predict(input_img_for_model)
+                        digit = self.clf.predict(input_img_for_model)
                         print(f'Predicted Digit: {digit[0]}')
                         
                         # Guardar la imagen del rastro
                         trajectory_img = np.zeros((480, 640), dtype=np.uint8)
-                        for (x, y) in trajectory:
+                        for (x, y) in self.trajectory:
                             cv2.circle(trajectory_img, (x, y), 5, 255, -1)
                         cv2.imwrite('trajectory.png', trajectory_img)
                         
@@ -157,13 +153,13 @@ class TraceRecognition():
                         plt.axis('off')
                         plt.show()
 
-                        trajectory = []
+                        self.trajectory = []
                     else:
                         print("Invalid trajectory, try again.")
             
             # Si el usuario presiona 'c', borrar la trayectoria y empezar de nuevo
             elif key == ord('c'):
-                trajectory = []
+                self.trajectory = []
                 print("Trazo eliminado. Empieza de nuevo.")
             
             # Romper el bucle con la tecla 'q'
