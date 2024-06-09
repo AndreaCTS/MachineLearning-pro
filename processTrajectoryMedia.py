@@ -34,7 +34,7 @@ def interpolate_trajectory(trajectory):
         curr = trajectory[i]
         interpolated.append(prev)
         # Interpolar puntos adicionales
-        for t in np.linspace(0, 1, num=10):
+        for t in np.linspace(0, 1, num=5):  # Reducir la interpolación para mejorar precisión
             interpolated.append((int(prev[0] * (1 - t) + curr[0] * t), int(prev[1] * (1 - t) + curr[1] * t)))
     interpolated.append(trajectory[-1])
     return interpolated
@@ -45,7 +45,7 @@ def preprocess_trajectory(trajectory, frame_shape):
     
     # Dibujar la trayectoria en la imagen con un círculo de tamaño moderado
     for (x, y) in interpolate_trajectory(trajectory):
-        cv2.circle(image, (x, y), 5, 255, -1)  # Reducir el tamaño del círculo a 5
+        cv2.circle(image, (x, y), 3, 255, -1)  # Reducir el tamaño del círculo a 3
 
     # Encontrar los límites del trazo
     x_coords, y_coords = zip(*trajectory)
@@ -56,8 +56,8 @@ def preprocess_trajectory(trajectory, frame_shape):
     if x_min == x_max or y_min == y_max:
         return None
 
-    # Recortar la imagen al tamaño del trazo con un pequeño margen
-    margin = 10
+    # Recortar la imagen al tamaño del trazo con un margen más amplio
+    margin = 20
     x_min = max(x_min - margin, 0)
     x_max = min(x_max + margin, image.shape[1])
     y_min = max(y_min - margin, 0)
@@ -75,12 +75,15 @@ def preprocess_trajectory(trajectory, frame_shape):
     final_image[4:24, 4:24] = resized_image
 
     # Aplicar operaciones morfológicas para rellenar huecos y suavizar
-    kernel = np.ones((2,2), np.uint8)
+    kernel = np.ones((2, 2), np.uint8)
     final_image = cv2.morphologyEx(final_image, cv2.MORPH_CLOSE, kernel)
-    final_image = cv2.GaussianBlur(final_image, (3, 3), 0)
-    final_image = cv2.normalize(final_image, 0, 255, cv2.NORM_MINMAX)
-    # Perform histogram equalization
+    
+    # Normalización y ecualización del histograma
+    final_image = cv2.normalize(final_image, None, 0, 255, cv2.NORM_MINMAX)
     final_image = cv2.equalizeHist(final_image)
+
+    # Aplicar binarización para asegurar que todos los blancos sean iguales
+    _, final_image = cv2.threshold(final_image, 128, 255, cv2.THRESH_BINARY)
 
     return final_image
 
@@ -126,9 +129,6 @@ while True:
             input_img = preprocess_trajectory(trajectory, frame.shape)
             if input_img is not None:
                 input_img_for_model = input_img.reshape(1, -1)   # aplanar para el modelo SVM
-                print("tamaño de la imagen : ",input_img_for_model.shape)
-                print("vector image: ",input_img_for_model)
-                #input_img_for_model = scaler.transform(input_img_for_model)  # Estandarizar
                 digit = clf.predict(input_img_for_model)
                 print(f'Predicted Digit: {digit[0]}')
                 
