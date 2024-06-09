@@ -5,7 +5,7 @@ from RoiRecognition import RoiRecognition
 
 def main():
     while True:
-        print("Select mode:")
+        print("Select one mode:")
         print("1. Trace Recognition")
         print("2. ROI Recognition")
         print("q. Quit")
