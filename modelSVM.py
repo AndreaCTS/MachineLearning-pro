@@ -15,20 +15,13 @@ def load_mnist_data():
     mnist = tf.keras.datasets.mnist
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
     # Aplanar las imágenes
-    # Redimensionar las imágenes a 28x28 y aplanar
-    X_train = X_train.reshape(-1, 28*28).astype('float32') 
-    X_test = X_test.reshape(-1, 28*28).astype('float32') 
+    # Redimensionar las imágenes a 28x28, aplanar y normalizar 
+    X_train = X_train.reshape(-1, 28*28).astype('float32')/255.0
+    X_test = X_test.reshape(-1, 28*28).astype('float32')/255.0
     return X_train, X_test, y_train, y_test
 
 # Cargar el dataset MNIST
 X_train, X_test, y_train, y_test = load_mnist_data()
-
-
-# Estandarizar las características
-#scaler = StandardScaler()
-#X_train = scaler.fit_transform(X_train)
-#X_test = scaler.transform(X_test)
-
 
 param_grid_poly = {
     'C': [10],
