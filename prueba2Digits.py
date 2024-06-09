@@ -27,13 +27,37 @@ def smooth_trajectory(trajectory, alpha=0.75):
         smoothed = trajectory
     return smoothed
 
+
+def interpolate_trajectory(trajectory):
+    interpolated = []
+    for i in range(1, len(trajectory)):
+        prev = trajectory[i - 1]
+        curr = trajectory[i]
+        interpolated.append(prev)
+        # Interpolar puntos adicionales
+        for t in np.linspace(0, 1, num=10):
+            interpolated.append((int(prev[0] * (1 - t) + curr[0] * t), int(prev[1] * (1 - t) + curr[1] * t)))
+    interpolated.append(trajectory[-1])
+    return interpolated
+
 def preprocess_trajectory(trajectory, frame_shape):
     # Crear una imagen en blanco de 640x480 para capturar la resolución completa
     image = np.zeros((480, 640), dtype=np.uint8)
     
     # Dibujar la trayectoria en la imagen
-    for (x, y) in trajectory:
-        cv2.circle(image, (x, y), 7, 255, -1)
+    for (x, y) in interpolate_trajectory(trajectory):
+        cv2.circle(image, (x, y), 3, 255, -1)  # Reducir el tamaño del círculo a 3  # Aumentar el tamaño del círculo a 10
+
+    return preprocess_image(image)
+
+
+def preprocess_image(image):
+    # Encontrar los límites del trazo
+    x_coords, y_coords = np.where(image > 0)
+    if len(x_coords) == 0 or len(y_coords) == 0:
+        return None
+    x_min, x_max = min(x_coords), max(x_coords)
+    y_min, y_max = min(y_coords), max(y_coords)
 
     # Encontrar los límites del trazo
     x_coords, y_coords = zip(*trajectory)
@@ -44,7 +68,13 @@ def preprocess_trajectory(trajectory, frame_shape):
     if x_min == x_max or y_min == y_max:
         return None
 
-    # Recortar la imagen al tamaño del trazo
+    # Recortar la imagen al tamaño del trazo con un margen más amplio
+    margin = 20
+    x_min = max(x_min - margin, 0)
+    x_max = min(x_max + margin, image.shape[1])
+    y_min = max(y_min - margin, 0)
+    y_max = min(y_max + margin, image.shape[0])
+
     cropped_image = image[y_min:y_max, x_min:x_max]
 
     # Redimensionar la imagen recortada a 20x20 píxeles (MNIST deja un margen de 4 píxeles)
@@ -56,15 +86,71 @@ def preprocess_trajectory(trajectory, frame_shape):
     # Colocar la imagen redimensionada en el centro de la imagen 28x28
     final_image[4:24, 4:24] = resized_image
 
-    # Normalizar la imagen
-    normalized_image = final_image / 255.0
+    # Aplicar operaciones morfológicas para rellenar huecos y suavizar
+    kernel = np.ones((2, 2), np.uint8)
+    final_image = cv2.dilate(final_image, kernel, iterations=2)
+    final_image = cv2.erode(final_image, kernel, iterations=1)
+    final_image = cv2.GaussianBlur(final_image, (3, 3), 0)
 
-    return normalized_image
+    # Normalización y ecualización del histograma
+    final_image = cv2.normalize(final_image, None, 0, 255, cv2.NORM_MINMAX)
+    final_image = cv2.equalizeHist(final_image)
+
+    # Aplicar binarización para asegurar que todos los blancos sean iguales
+    _, final_image = cv2.threshold(final_image, 128, 255, cv2.THRESH_BINARY)
+
+    return final_image
+
+
+# Función para preprocesar y predecir en tiempo real
+def preprocess_and_predict(frame, clf):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # Aplicar un filtro Gaussiano para suavizar la imagen y reducir el ruido
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    _, thresh = cv2.threshold(blurred, 128, 255, cv2.THRESH_BINARY_INV)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    h, w = frame.shape[:2]
+    center_x, center_y = w // 2, h // 2
+    offset = 100  # Tamaño de la región central
+    center_region = (center_x - offset, center_y - offset, center_x + offset, center_y + offset)
+
+    best_contour = None
+    best_area = 0
+
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        area = w * h
+        # Verificar si el contorno está dentro de la región central y es el más grande
+        if (center_region[0] < x < center_region[2] and center_region[1] < y < center_region[3] and 
+            30 < w < 200 and 30 < h < 200 and area > best_area):
+            best_contour = cnt
+            best_area = area
+
+    if best_contour is not None:
+        x, y, w, h = cv2.boundingRect(best_contour)
+        roi = gray[y:y+h, x:x+w]
+        
+        # Crear una imagen en blanco de 640x480 para capturar la resolución completa
+        roi_image = np.zeros((480, 640), dtype=np.uint8)
+        roi_image[y:y+h, x:x+w] = roi
+        
+        # Preprocesar la imagen de la ROI
+        processed_digit = preprocess_image(roi_image)
+        if processed_digit is not None:
+            roi_digits = processed_digit.reshape((1, -1))
+            number_poly = clf.predict(roi_digits)
+            
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.putText(frame, f'{int(number_poly)}', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+    return frame
 
 while True:
     ret, frame = cap.read()
     if not ret:
         break
+    
     # Invertir la imagen horizontalmente
     frame = cv2.flip(frame, 1)
     
@@ -92,8 +178,11 @@ while True:
                     continue
                 cv2.line(frame, smoothed_trajectory[i - 1], smoothed_trajectory[i], (0, 255, 0), 2)
     
-    # Mostrar el frame con el rastro del dedo
-    cv2.imshow('Frame', frame)
+    # Procesar y predecir el dígito escrito en una hoja
+    frame_with_digits = preprocess_and_predict(frame, clf)
+    
+    # Mostrar el frame con el rastro del dedo y los dígitos detectados y clasificados
+    cv2.imshow('Frame with Digits and Trajectory', frame_with_digits)
     
     key = cv2.waitKey(1) & 0xFF
     
@@ -103,9 +192,6 @@ while True:
             input_img = preprocess_trajectory(trajectory, frame.shape)
             if input_img is not None:
                 input_img_for_model = input_img.reshape(1, -1)   # aplanar para el modelo SVM
-                print("tamaño de la imagen : ",input_img_for_model.shape)
-                print("vector image: ",input_img_for_model)
-                #input_img_for_model = scaler.transform(input_img_for_model)  # Estandarizar
                 digit = clf.predict(input_img_for_model)
                 print(f'Predicted Digit: {digit[0]}')
                 
@@ -116,10 +202,10 @@ while True:
                 cv2.imwrite('trajectory.png', trajectory_img)
                 
                 # Mostrar la imagen del trazo
-                #cv2.imshow('Trace Image', cv2.resize(trajectory_img, (280, 280), interpolation=cv2.INTER_AREA))
+                cv2.imshow('Trace Image', cv2.resize(trajectory_img, (280, 280), interpolation=cv2.INTER_AREA))
 
                 # Mostrar la imagen que se envía al modelo
-                #cv2.imshow('Model Input Image', (input_img * 255).astype(np.uint8))  # Desnormalizar para mostrar
+                cv2.imshow('Model Input Image', (input_img * 255).astype(np.uint8))  # Desnormalizar para mostrar
 
                 # Visualizar el preprocesamiento detallado
                 plt.figure(figsize=(5, 5))
