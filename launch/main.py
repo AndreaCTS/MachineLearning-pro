@@ -1,7 +1,14 @@
 import sys
 import cv2
-from TraceRecognition import TraceRecognition
-from RoiRecognition import RoiRecognition
+import os
+# Agrega la ruta de la carpeta padre al sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from model.TraceRecognition import TraceRecognition
+from model.RoiRecognition import RoiRecognition
+
+# Asegura la ruta del módulo
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def main():
     while True:

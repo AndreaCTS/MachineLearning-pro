@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 class RoiRecognition:
     def __init__(self):
-        self.clf = joblib.load("svm_digit_classifier.pkl")
+        self.clf = joblib.load("model_archivos/svm_digit_classifier.pkl")
 
     def preprocess_image(self, image):
         inverted_roi = cv2.bitwise_not(image)

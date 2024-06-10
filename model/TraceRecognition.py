@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 class TraceRecognition:
     def __init__(self):
-        self.clf = joblib.load("svm_digit_classifier.pkl")
+        self.clf = joblib.load("model_archivos/svm_digit_classifier.pkl")
         self.trajectory = []
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7)

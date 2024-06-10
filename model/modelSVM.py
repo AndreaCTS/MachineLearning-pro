@@ -51,5 +51,5 @@ print(f'Accuracy with  Standard in POLY: {accuracy_score(y_test, y_predPoly)}')
 
 
 # Guardar el modelo entrenado y el scaler
-joblib.dump(grid_poly, "svm_digit_classifier.pkl")
+joblib.dump(grid_poly, "model_archivos/svm_digit_classifier.pkl")
 #joblib.dump(scaler, "scaler_28x28.pkl")

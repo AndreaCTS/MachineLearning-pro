@@ -28,8 +28,8 @@ X_test_3D = pca.transform(X_test)
 svm_3D = SVC(kernel='poly', C=10, gamma='scale')
 svm_3D.fit(X_train_3D, y_train)
 
-joblib.dump(svm_3D, "svm_digit_classifier_PCA.pkl")
-np.save("test3.npy", X_test_3D)
-np.save("test.npy", y_test)
+joblib.dump(svm_3D, "model_archivos/svm_digit_classifier_PCA.pkl")
+np.save("model_archivos/test3.npy", X_test_3D)
+np.save("model_archivos/test.npy", y_test)
 
 
