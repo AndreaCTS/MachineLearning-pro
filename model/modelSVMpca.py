@@ -1,6 +1,7 @@
 import joblib
 import matplotlib.pyplot as plt
 import numpy as np
+import tensorflow as tf
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
@@ -20,7 +21,7 @@ X_train, X_test, y_train, y_test = load_mnist_data()
 
 
 # Reducir la dimensionalidad a 3D usando PCA
-pca = PCA(n_components=3)
+pca = PCA(n_components=2)
 X_train_3D = pca.fit_transform(X_train)
 X_test_3D = pca.transform(X_test)
 
@@ -28,8 +29,8 @@ X_test_3D = pca.transform(X_test)
 svm_3D = SVC(kernel='poly', C=10, gamma='scale')
 svm_3D.fit(X_train_3D, y_train)
 
-joblib.dump(svm_3D, "model_archivos/svm_digit_classifier_PCA.pkl")
-np.save("model_archivos/test3.npy", X_test_3D)
+joblib.dump(svm_3D, "model_archivos/svm_digit_classifier_PCA2.pkl")
+np.save("model_archivos/test2.npy", X_test_3D)
 np.save("model_archivos/test.npy", y_test)
 
 
