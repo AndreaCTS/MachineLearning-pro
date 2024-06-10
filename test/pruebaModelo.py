@@ -22,9 +22,6 @@ X_train, X_test, y_train, y_test = load_mnist_data()
 
 print()
 
-# Estandarizar las características
-#X_test = scaler.transform(X_test)
-
 # Seleccionar algunas imágenes de prueba al azar
 num_images = 10
 indices = np.random.choice(len(X_test), num_images, replace=False)
