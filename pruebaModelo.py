@@ -7,7 +7,6 @@ import joblib
 
 # Cargar el modelo SVM y el escalador
 clf = joblib.load("svm_digit_classifier.pkl")
-scaler = joblib.load("scaler_28x28.pkl")
 
 # Función para cargar y preprocesar el dataset MNIST
 def load_mnist_data():

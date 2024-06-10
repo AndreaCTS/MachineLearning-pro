@@ -9,7 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score
 
-
 # Función para cargar y preprocesar el dataset MNIST
 def load_mnist_data():
     mnist = tf.keras.datasets.mnist
@@ -20,8 +19,21 @@ def load_mnist_data():
     X_test = X_test.reshape(-1, 28*28).astype('float32')/255.0
     return X_train, X_test, y_train, y_test
 
+    
 # Cargar el dataset MNIST
 X_train, X_test, y_train, y_test = load_mnist_data()
+
+
+# Visualizar las imágenes con sus predicciones
+plt.figure(figsize=(10, 5))
+for i in range(10):
+    plt.subplot(2, 5, i + 1)
+    plt.imshow(X_train[i].reshape(28, 28), cmap='gray')
+    plt.title("preprocesamiento")
+    plt.axis('off')
+plt.tight_layout()
+plt.show()
+
 
 param_grid_poly = {
     'C': [10],

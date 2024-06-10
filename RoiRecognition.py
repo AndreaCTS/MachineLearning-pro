@@ -23,7 +23,7 @@ class RoiRecognition:
         y_min, y_max = min(y_coords), max(y_coords)
         if x_min == x_max or y_min == y_max:
             return None
-        margin = 20
+        margin = 50  # Aumenta el margen
         x_min = max(x_min - margin, 0)
         x_max = min(x_max + margin, image.shape[1])
         y_min = max(y_min - margin, 0)
@@ -51,7 +51,7 @@ class RoiRecognition:
             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             h, w = frame.shape[:2]
             center_x, center_y = w // 2, h // 2
-            offset = 100
+            offset = 300  # Aumenta el tamaño del offset
             center_region = (center_x - offset, center_y - offset, center_x + offset, center_y + offset)
             best_contour = None
             best_area = 0
@@ -78,3 +78,7 @@ class RoiRecognition:
                 break
         cap.release()
         cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    recognizer = RoiRecognition()
+    recognizer.run()
