@@ -6,7 +6,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from graficas.graficaMargen import SVMClassifier
+from graficas.modeloOptimizado import SVMClassifier
 
 class TestSVMClassifier(unittest.TestCase):
     

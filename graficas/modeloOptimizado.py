@@ -9,7 +9,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from mpl_toolkits.mplot3d import Axes3D
 
 class SVMClassifier:
-    def __init__(self, class_of_interest=1, kernel='poly', C=10,gamma='scale'):
+    def __init__(self, class_of_interest=1, kernel='poly', C=10, gamma='scale'):
         """
         Inicializa la clase SVMClassifier con los parámetros especificados.
 
@@ -34,8 +34,10 @@ class SVMClassifier:
             X_train, X_test (numpy.ndarray): Conjuntos de entrenamiento y prueba de las imágenes.
             y_train, y_test (numpy.ndarray): Conjuntos de entrenamiento y prueba de las etiquetas.
         """
+        # Cargar los datos MNIST desde TensorFlow
         mnist = tf.keras.datasets.mnist
         (X_train, y_train), (X_test, y_test) = mnist.load_data()
+        # Redimensionar y normalizar las imágenes
         X_train = X_train.reshape(-1, 28*28).astype('float32') / 255.0
         X_test = X_test.reshape(-1, 28*28).astype('float32') / 255.0
         return X_train, X_test, y_train, y_test
@@ -51,6 +53,7 @@ class SVMClassifier:
         Returns:
             X_train_reduced, X_test_reduced (numpy.ndarray): Datos reducidos a 3 dimensiones.
         """
+        # Aplicar PCA para reducir las dimensiones a 3
         X_train_reduced = self.pca.fit_transform(X_train)
         X_test_reduced = self.pca.transform(X_test)
         return X_train_reduced, X_test_reduced
@@ -66,7 +69,9 @@ class SVMClassifier:
         Returns:
             y_train_binary (numpy.ndarray): Etiquetas de entrenamiento binarizadas para la clase de interés.
         """
+        # Binarizar las etiquetas de entrenamiento para la clase de interés
         y_train_binary = (y_train == self.class_of_interest).astype(int)
+        # Entrenar el modelo SVM
         self.svm.fit(X_train, y_train_binary)
         return y_train_binary
 
@@ -78,12 +83,18 @@ class SVMClassifier:
             X_test (numpy.ndarray): Datos de prueba reducidos.
             y_test (numpy.ndarray): Etiquetas de prueba.
         """
+        # Binarizar las etiquetas de prueba para la clase de interés
         y_test_binary = (y_test == self.class_of_interest).astype(int)
+        # Predecir las etiquetas utilizando el modelo SVM
         y_pred = self.svm.predict(X_test)
+        # Calcular la precisión del modelo
         accuracy = accuracy_score(y_test_binary, y_pred)
+        # Generar el informe de clasificación
         report = classification_report(y_test_binary, y_pred)
+        # Calcular la matriz de confusión
         cm = confusion_matrix(y_test_binary, y_pred)
 
+        # Imprimir las métricas de rendimiento
         print("\n\t\t\t\t--------- METRICAS ---------")
         print(f'\nAccuracy: {accuracy}')
         print(f'\nClassification Report:\n{report}')
@@ -97,11 +108,13 @@ class SVMClassifier:
             X (numpy.ndarray): Datos reducidos.
             y (numpy.ndarray): Etiquetas binarizadas.
         """
+        # Reducir las dimensiones a 2D utilizando PCA
         pca_2d = PCA(n_components=2)
         X_2d = pca_2d.fit_transform(X)
 
         print(f"Tamaño de X_reduced: {X_2d.shape}")
 
+        # Definir los límites del gráfico
         x_min, x_max = X_2d[:, 0].min() - 1, X_2d[:, 0].max() + 1
         y_min, y_max = X_2d[:, 1].min() - 1, X_2d[:, 1].max() + 1
         xx, yy = np.meshgrid(np.linspace(x_min, x_max, 500),
@@ -113,17 +126,20 @@ class SVMClassifier:
 
         print(f"Tamaño de grid: {grid.shape}")
 
+        # Calcular la función de decisión del SVM en el grid
         Z = self.svm.decision_function(pca_2d.inverse_transform(grid))
         print(f"Tamaño de Z antes de reshaping: {Z.shape}")
         Z = Z.reshape(xx.shape)
         print(f"Tamaño de Z después de reshaping: {Z.shape}")
 
+        # Graficar el margen suave
         plt.contourf(xx, yy, Z, levels=np.linspace(Z.min(), 0, 7), cmap=plt.cm.PuBu)
         plt.contour(xx, yy, Z, levels=[0], linewidths=2, colors='darkred')
 
         # Dibujar los márgenes suaves
         plt.contour(xx, yy, Z, levels=[-1, 1], linewidths=2, colors='green', linestyles='dashed')
 
+        # Graficar los puntos de datos
         plt.scatter(X_2d[:, 0], X_2d[:, 1], c=y, s=30, edgecolor='k', cmap=plt.cm.Paired)
         plt.xlabel('PC1')
         plt.ylabel('PC2')
@@ -137,6 +153,7 @@ class SVMClassifier:
         Args:
             X (numpy.ndarray): Datos reducidos a 3 dimensiones.
         """
+        # Definir los límites del gráfico
         x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
         y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
         z_min, z_max = X[:, 2].min() - 1, X[:, 2].max() + 1
@@ -148,6 +165,7 @@ class SVMClassifier:
         Z = self.svm.decision_function(grid)
         Z = Z.reshape(xx.shape)
         
+        # Crear una figura 3D
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         
@@ -162,13 +180,21 @@ class SVMClassifier:
         plt.show()
 
 if __name__ == "__main__":
+    # Crear una instancia de la clase SVMClassifier
     svm_classifier = SVMClassifier(class_of_interest=0)
     
+    # Cargar y preprocesar los datos MNIST
     X_train, X_test, y_train, y_test = svm_classifier.load_mnist_data()
     X_train_reduced, X_test_reduced = svm_classifier.preprocess_data(X_train, X_test)
     
+    # Entrenar el modelo SVM
     y_train_binary = svm_classifier.train_model(X_train_reduced, y_train)
     
+    # Evaluar el modelo SVM
     svm_classifier.evaluate_model(X_test_reduced, y_test)
+    
+    # Visualizar el margen suave en 2D PCA
     svm_classifier.plot_soft_margin(X_train_reduced, y_train_binary)
+    
+    # Visualizar el límite de decisión en 3D PCA
     svm_classifier.plot_decision_boundary_3D(X_train_reduced)
