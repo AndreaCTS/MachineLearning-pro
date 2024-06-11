@@ -61,6 +61,14 @@ class RoiRecognition:
         final_image = cv2.equalizeHist(final_image)
         _, final_image = cv2.threshold(final_image, 128, 255, cv2.THRESH_BINARY)
         return final_image
+    
+
+    def predict(self, image):
+        processed_image = self.preprocess_image(image)
+        if processed_image is not None:
+            processed_image = processed_image.reshape(1, -1)
+            return self.clf.predict(processed_image)[0]
+        return None
 
     def run(self):
         """

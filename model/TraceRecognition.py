@@ -69,6 +69,10 @@ class TraceRecognition:
         Returns:
             numpy.ndarray: Imagen preprocesada de 28x28 píxeles.
         """
+        if not trajectory:
+            print("Trajectory is empty")
+            return None
+
         image = np.zeros((480, 640), dtype=np.uint8)
         for (x, y) in self.interpolate_trajectory(trajectory):
             cv2.circle(image, (x, y), 5, 255, -1)
@@ -92,6 +96,14 @@ class TraceRecognition:
         final_image = cv2.normalize(final_image, 0, 255, cv2.NORM_MINMAX)
         final_image = cv2.equalizeHist(final_image)
         return final_image
+    
+    def predict(self, trajectory, frame_shape):
+        input_img = self.preprocess_trajectory(trajectory, frame_shape)
+        if input_img is not None:
+            input_img_for_model = input_img.reshape(1, -1)
+            digit = self.clf.predict(input_img_for_model)
+            return digit[0]
+        return None
 
     def run(self):
         """
