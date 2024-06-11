@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 
 class TraceRecognition:
     def __init__(self):
+        """
+        Inicializa la clase TraceRecognition cargando el modelo SVM,
+        configurando MediaPipe Hands y la captura de video.
+        """
         self.clf = joblib.load("model_archivos/svm_digit_classifier.pkl")
         self.trajectory = []
         self.mp_hands = mp.solutions.hands
@@ -13,6 +17,16 @@ class TraceRecognition:
         self.cap = cv2.VideoCapture(0)
 
     def smooth_trajectory(self, trajectory, alpha=0.75):
+        """
+        Suaviza la trayectoria utilizando un filtro de media móvil exponencial.
+
+        Args:
+            trajectory (list): Lista de coordenadas (x, y) de la trayectoria.
+            alpha (float): Factor de suavizado.
+
+        Returns:
+            list: Lista de coordenadas suavizadas.
+        """
         smoothed = []
         if len(trajectory) > 1:
             smoothed.append(trajectory[0])
@@ -25,6 +39,15 @@ class TraceRecognition:
         return smoothed
 
     def interpolate_trajectory(self, trajectory):
+        """
+        Interpola la trayectoria para agregar puntos adicionales entre las coordenadas.
+
+        Args:
+            trajectory (list): Lista de coordenadas (x, y) de la trayectoria.
+
+        Returns:
+            list: Lista de coordenadas interpoladas.
+        """
         interpolated = []
         for i in range(1, len(trajectory)):
             prev = trajectory[i - 1]
@@ -36,6 +59,16 @@ class TraceRecognition:
         return interpolated
 
     def preprocess_trajectory(self, trajectory, frame_shape):
+        """
+        Preprocesa la trayectoria para crear una imagen adecuada para la clasificación del modelo SVM.
+
+        Args:
+            trajectory (list): Lista de coordenadas (x, y) de la trayectoria.
+            frame_shape (tuple): Forma del marco de la imagen capturada.
+
+        Returns:
+            numpy.ndarray: Imagen preprocesada de 28x28 píxeles.
+        """
         image = np.zeros((480, 640), dtype=np.uint8)
         for (x, y) in self.interpolate_trajectory(trajectory):
             cv2.circle(image, (x, y), 5, 255, -1)
@@ -61,6 +94,9 @@ class TraceRecognition:
         return final_image
 
     def run(self):
+        """
+        Inicia la captura de video y el reconocimiento de trazos en tiempo real.
+        """
         while True:
             ret, frame = self.cap.read()
             if not ret:

@@ -6,9 +6,22 @@ import matplotlib.pyplot as plt
 
 class RoiRecognition:
     def __init__(self):
+        """
+        Inicializa la clase RoiRecognition cargando el modelo SVM.
+        """
         self.clf = joblib.load("model_archivos/svm_digit_classifier.pkl")
 
     def preprocess_image(self, image):
+        """
+        Preprocesa la imagen ROI para invertir los colores, normalizar,
+        aplicar un desenfoque Gaussiano y convertirla a binaria.
+
+        Args:
+            image (numpy.ndarray): Imagen de la región de interés (ROI).
+
+        Returns:
+            numpy.ndarray: Imagen preprocesada de 28x28 píxeles.
+        """
         inverted_roi = cv2.bitwise_not(image)
         normalized_image = cv2.normalize(inverted_roi, None, 0, 255, cv2.NORM_MINMAX)
         blurred_image = cv2.GaussianBlur(normalized_image, (3, 3), 0)
@@ -16,6 +29,16 @@ class RoiRecognition:
         return self.preprocess_binary_image(binary_image)
 
     def preprocess_binary_image(self, image):
+        """
+        Preprocesa la imagen binaria recortando, redimensionando y aplicando
+        operaciones morfológicas para preparar la imagen para el modelo SVM.
+
+        Args:
+            image (numpy.ndarray): Imagen binaria.
+
+        Returns:
+            numpy.ndarray: Imagen preprocesada de 28x28 píxeles.
+        """
         x_coords, y_coords = np.where(image > 0)
         if len(x_coords) == 0 or len(y_coords) == 0:
             return None
@@ -40,6 +63,9 @@ class RoiRecognition:
         return final_image
 
     def run(self):
+        """
+        Inicia la captura de video y el reconocimiento de dígitos en la región de interés (ROI) en tiempo real.
+        """
         cap = cv2.VideoCapture(0)
         while True:
             ret, frame = cap.read()
@@ -78,7 +104,3 @@ class RoiRecognition:
                 break
         cap.release()
         cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    recognizer = RoiRecognition()
-    recognizer.run()
