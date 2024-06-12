@@ -36,9 +36,9 @@ plt.show()
 
 #Ajusta los hiperparámetros del modelo SVM utilizando GridSearchCV.
 param_grid = {
-            'C': [1, 10],
-            'gamma': ['scale', 'auto'],
-            'kernel': ['linear','rbf', 'poly']
+            'C': [10],
+            'gamma': ['scale'],
+            'kernel': ['poly']
         }
 
 

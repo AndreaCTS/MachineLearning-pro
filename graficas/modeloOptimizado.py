@@ -4,28 +4,23 @@ import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 import tensorflow as tf
+from pathlib import Path
 from tensorflow.keras.datasets import mnist
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.model_selection import GridSearchCV
 
 class SVMClassifier:
-    def __init__(self, class_of_interest=1, kernel='poly', C=10, gamma='scale'):
+    def __init__(self, class_of_interest=1):
         """
         Inicializa la clase SVMClassifier con los parámetros especificados.
 
         Args:
             class_of_interest (int): Clase de interés para la clasificación binaria.
-            kernel (str): Tipo de kernel a utilizar en el SVM.
-            C (float): Parámetro de regularización.
-            gamma (str): Coeficiente gamma para ciertos kernels (por ejemplo, 'rbf', 'poly').
         """
         self.class_of_interest = class_of_interest
-        self.kernel = kernel
-        self.gamma = gamma
-        self.C = C
         self.pca = PCA(n_components=3)
-        self.svm = SVC(C=self.C, kernel=self.kernel, gamma=self.gamma)
+        self.svm = joblib.load("model_archivos/svm_digit_classifier_PCA3.pkl")
 
     def load_mnist_data(self):
         """
@@ -129,6 +124,7 @@ class SVMClassifier:
         plt.xlabel('PC1')
         plt.ylabel('PC2')
         plt.title(f'Soft Margin for Class {self.class_of_interest} in 2D PCA Space')
+        save_fig("soft_margin_2D")
         plt.show()
 
     def plot_decision_boundary_3D(self, X):
@@ -155,23 +151,60 @@ class SVMClassifier:
         ax.set_xlabel('PC1')
         ax.set_ylabel('PC2')
         ax.set_zlabel('PC3')
-        ax.set_title('Decision Boundary in 3D PCA Space')
+        ax.set_title(f'Decision Boundary for class  {self.class_of_interest} in 3D PCA Space')
         
         # Visualizar el límite de decisión
         ax.plot_surface(xx[:, :, 0], yy[:, :, 0], Z[:, :, 0], alpha=0.3, cmap='coolwarm')
-        
+        save_fig("decision_boundary_3D")
+        plt.show()
+
+    def plot_class_distribution_3D(self, X_3d, y):
+        """
+        Visualiza la distribución de puntos de las 10 clases en el espacio 3D PCA.
+
+        Args:
+            X_3d (numpy.ndarray): Datos reducidos a 3 dimensiones.
+            y (numpy.ndarray): Etiquetas.
+        """
+
+        fig = plt.figure(figsize=(12, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        scatter = ax.scatter(X_3d[:, 0], X_3d[:, 1], X_3d[:, 2], c=y, cmap=plt.get_cmap("tab10"), s=10, alpha=0.7)
+        ax.set_xlabel('PC1')
+        ax.set_ylabel('PC2')
+        ax.set_zlabel('PC3')
+        ax.set_title('Class Distribution in 3D PCA Space')
+        fig.legend(handles=scatter.legend_elements()[0], labels=list(range(10)))
+        save_fig("distribution__points_3D")
         plt.show()
 
 if __name__ == "__main__":
+
+    IMAGES_PATH = ""
+
+    def save_fig(fig_id, tight_layout=True, fig_extension="png", resolution=300):
+        path = IMAGES_PATH / f"{fig_id}.{fig_extension}"
+        if tight_layout:
+            plt.tight_layout()
+        plt.savefig(path, format=fig_extension, dpi=resolution)
+
+
+    IMAGES_PATH = Path() / "graficas" / "por_clase" 
+    IMAGES_PATH.mkdir(parents=True, exist_ok=True)
     svm_classifier = SVMClassifier(class_of_interest=0)
-    
+        
     X_train, X_test, y_train, y_test = svm_classifier.load_mnist_data()
     X_train_reduced, X_test_reduced = svm_classifier.preprocess_data(X_train, X_test)
-    
+        
     y_train_binary = svm_classifier.train_model(X_train_reduced, y_train)
-    
+        
     svm_classifier.evaluate_model(X_test_reduced, y_test)
+
     svm_classifier.plot_soft_margin(X_train_reduced, y_train_binary)
     svm_classifier.plot_decision_boundary_3D(X_train_reduced)
+    #svm_classifier.plot_class_distribution_3D(X_train_reduced,y_train)
+
+
+    
 
 
