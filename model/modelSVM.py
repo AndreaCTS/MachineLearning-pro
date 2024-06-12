@@ -34,22 +34,24 @@ for i in range(10):
 plt.tight_layout()
 plt.show()
 
-
-param_grid_poly = {
-    'C': [10],
-    'gamma': ['scale']
-}
+#Ajusta los hiperparámetros del modelo SVM utilizando GridSearchCV.
+param_grid = {
+            'C': [1, 10],
+            'gamma': ['scale', 'auto'],
+            'kernel': ['linear','rbf', 'poly']
+        }
 
 
 # Ajustar el modelo SVM con kernel polinomial
-grid_poly = GridSearchCV(SVC(kernel='poly'), param_grid_poly, refit=True, cv=5, n_jobs=-1)
-grid_poly.fit(X_train, y_train)
-print(f"Best parameters for polynomial kernel: {grid_poly.best_params_}")
-y_predPoly = grid_poly.predict(X_test)
-print(f'Accuracy with  Standard in POLY: {accuracy_score(y_test, y_predPoly)}')
+grid_svm = GridSearchCV(SVC(), param_grid, refit=True, cv=5, n_jobs=-1)
+grid_svm.fit(X_train, y_train)
+print(f'Mejores hiperparámetros: {grid_svm.best_params_}')
+print(f'Mejor puntuación: {grid_svm.best_score_}')
+y_predPoly = grid_svm.predict(X_test)
+print(f'Accuracy: {accuracy_score(y_test, y_predPoly)}')
 
 
 
 # Guardar el modelo entrenado y el scaler
-joblib.dump(grid_poly, "model_archivos/svm_digit_classifier.pkl")
+joblib.dump(grid_svm, "model_archivos/svm_digit_classifier.pkl")
 #joblib.dump(scaler, "scaler_28x28.pkl")

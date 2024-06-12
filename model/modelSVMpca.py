@@ -21,7 +21,7 @@ X_train, X_test, y_train, y_test = load_mnist_data()
 
 
 # Reducir la dimensionalidad a 3D usando PCA
-pca = PCA(n_components=2)
+pca = PCA(n_components=3)
 X_train_3D = pca.fit_transform(X_train)
 X_test_3D = pca.transform(X_test)
 
